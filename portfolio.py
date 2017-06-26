@@ -3,11 +3,14 @@ from BittrexWrapper import Bittrex
 
 class Portfolio(object):
 
-	def __init__(self, api_key, api_secret):
+
+
+	def __init__(self, api_key, api_secret, minimum_return = 100):
 		self.bt = Bittrex()
 		self.bt.api_key = api_key
 		self.bt.api_secret = api_secret
 		self.open_orders  = pd.DataFrame()
+		self.minimum_return = minimum_return
 		pass
 
 	def report(self):
@@ -48,9 +51,9 @@ class Portfolio(object):
 			price = sum(orderhistory.PricePerUnit * orderhistory.Quantity) / volume
 			return price
 
-	def min_return(self, min_return = 2):
+	def min_return(self):
 		"""Defines the minimum return at what point the stop-limit will be activated.
 		By default 2x."""
 		if self.open_orders.empty:
 			self.get_open_orders()
-		self.open_orders.loc[:,"MinReturn"] = min_return * self.open_orders.BuyPrice
+		self.open_orders.loc[:,"MinReturn"] = self.open_orders.BuyPrice + ((self.minimum_return/100) * self.open_orders.BuyPrice)
