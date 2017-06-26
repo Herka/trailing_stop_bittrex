@@ -9,14 +9,14 @@ class Trading:
 	def __init__(self, api_key, api_secret):
 		self.bt = Bittrex(api_key=api_key, api_secret = api_secret)
 		self.p = Portfolio(api_key=api_key, api_secret = api_secret)
-		self.open_orders = p.report()
+		self.open_orders = self.p.report()
 
 
-	def update_prices:
+	def update_prices(self):
 		"""Get the LastPrice and update the DataFrame"""
 		for i,r in self.open_orders.iterrows():
 			market = "BTC-%s" % r["Currency"]
-			ticker = bt.get_ticket(market):
+			ticker = self.bt.get_ticker(market)
 			if ticker["success"]:
 				last = ticker["result"]["Last"]
 				self.open_orders.loc[self.open_orders["Currency"]==r["Currency"],"LastPrice" ] = last
@@ -44,7 +44,7 @@ class Trading:
 			currency = r["Currency"]
 			market = "BTC-%s" % currency
 			quantity = r["Volume"]
- 			self.bt.sell_market(market = market,quantity = quantity)
+			self.bt.sell_market(market = market,quantity = quantity)
 		return
 
 	def monitoring(self):
@@ -56,12 +56,14 @@ class Trading:
 		while True:
 			self.update_prices()
 
-
-			if self.open_orders.loc[(self.open_orders["Stop"])|(self.open_orders["LastPrice"] >= self.open_orders["MinReturn"])]:
-				self.update_stop()
-
-			if self.open_orders[self.open_orders["Stop"]<= self.open_orders["LastPrice"]]
-				self.close_order()
+			print (self.open_orders)
+			if not self.open_orders.empty:
+				if self.open_orders.loc[(self.open_orders["LastPrice"] >= self.open_orders["MinReturn"])]:
+					self.update_stop()
+				if not self.open_orders["Stop"].dropna().empty:
+					self.update_stop()
+				if self.open_orders.loc[self.open_orders["Stop"]<= self.open_orders["LastPrice"]]:
+					self.close_order()
 			time.sleep(30)
 
 
@@ -71,3 +73,4 @@ if __name__ == "__main__":
 	api_key = sys.argv[1]
 	api_secret = sys.argv[2]
 	t = Trading(api_key, api_secret)
+	t.monitoring()

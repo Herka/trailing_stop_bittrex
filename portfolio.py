@@ -7,6 +7,7 @@ class Portfolio(object):
 		self.bt = Bittrex()
 		self.bt.api_key = api_key
 		self.bt.api_secret = api_secret
+		self.open_orders  = pd.DataFrame()
 		pass
 
 	def report(self):
@@ -17,9 +18,9 @@ class Portfolio(object):
 		"""First get the Balances to see what open positions exist.
 		Than loop through every open position to get the BuyPrice.
 		"""
-		self.open_orders = pd.DataFrame(colums=["Currency", "BuyPrice", "Volume","Stop", "LastPrice"])
-		balances = bt.get_balances()
-		if balance["success"]:
+		self.open_orders = pd.DataFrame(columns=["Currency", "BuyPrice", "Volume","Stop", "LastPrice"])
+		balances = self.bt.get_balances()
+		if balances["success"]:
 			balances = pd.DataFrame(balances["result"])
 			balances = balances.loc[balances.Balance > 0]
 			#OrderPrices
@@ -27,15 +28,15 @@ class Portfolio(object):
 				currency = r["Currency"]
 				volume = r["Balance"]
 				price = self.buy_price(currency, volume)
-				order = pd.DataFrame([currency, price, volume], colums = ["Currency", "BuyPrice", "Volume"])
+				order = pd.DataFrame([[currency, price, volume]], columns = ["Currency", "BuyPrice", "Volume"])
 				self.open_orders = pd.concat([self.open_orders, order])
-
+			self.open_orders = self.open_orders.loc[~self.open_orders["Currency"].isin(["BTC", "ETH"])]
 		return
 
 	def buy_price(self, currency, volume):
 		"""Gets the average buying price for a open position."""
 		market = "BTC-%s" % currency
-		orderhistory = bt.get_order_history(market=market)
+		orderhistory = self.bt.get_order_history(market=market)
 		if orderhistory["success"]:
 			orderhistory = pd.DataFrame(orderhistory["result"], )
 			orderhistory["Closed"] = pd.to_datetime(orderhistory["Closed"])
@@ -50,6 +51,6 @@ class Portfolio(object):
 	def min_return(self, min_return = 2):
 		"""Defines the minimum return at what point the stop-limit will be activated.
 		By default 2x."""
-		if not self.open_orders:
+		if self.open_orders.empty:
 			self.get_open_orders()
 		self.open_orders.loc[:,"MinReturn"] = min_return * self.open_orders.BuyPrice

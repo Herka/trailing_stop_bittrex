@@ -32,10 +32,9 @@ class Bittrex(object):
     """
     Used for requesting Bittrex with API key and API secret
     """
-    #def __init__(self, *args, **kwargs):
-    def __init__(self, api_key = None, api_secret = None **kw):
-        self.api_key = str(api_key) if "api_key" in kw else ''
-        self.api_secret = str(api_secret) if "api_key" in kw else ''
+    def __init__(self, api_key = None, api_secret = None ):
+        self.api_key = str(api_key) if api_key else ''
+        self.api_secret = str(api_secret) if api_secret else ''
 
     def api_query(self, method, options=None):
         """
