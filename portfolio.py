@@ -1,5 +1,6 @@
 import pandas as pd
 from BittrexWrapper import Bittrex
+import numpy as np
 
 class Portfolio(object):
 
@@ -33,7 +34,7 @@ class Portfolio(object):
 				price = self.buy_price(currency, volume)
 				order = pd.DataFrame([[currency, price, volume]], columns = ["Currency", "BuyPrice", "Volume"])
 				self.open_orders = pd.concat([self.open_orders, order])
-			self.open_orders = self.open_orders.loc[~self.open_orders["Currency"].isin(["BTC", "ETH"])]
+			self.open_orders = self.open_orders.loc[~self.open_orders["Currency"].isin(["BTC", "ETH", "NMR"])]
 		return
 
 	def buy_price(self, currency, volume):
@@ -41,14 +42,19 @@ class Portfolio(object):
 		market = "BTC-%s" % currency
 		orderhistory = self.bt.get_order_history(market=market)
 		if orderhistory["success"]:
-			orderhistory = pd.DataFrame(orderhistory["result"], )
-			orderhistory["Closed"] = pd.to_datetime(orderhistory["Closed"])
-			orderhistory = orderhistory.loc[orderhistory["OrderType"] == "LIMIT_BUY"]
-			orderhistory = orderhistory.sort_values("Closed", ascending=False)
-			orderhistory.reset_index(drop=True, inplace=True)
-			orderhistory.loc[:, "CumulativeQuant"] = orderhistory.Quantity.cumsum()
-			orderhistory = orderhistory.loc[orderhistory.CumulativeQuant <= volume]
-			price = sum(orderhistory.PricePerUnit * orderhistory.Quantity) / volume
+			if orderhistory["result"]:
+				orderhistory = pd.DataFrame(orderhistory["result"], )
+				orderhistory["Closed"] = pd.to_datetime(orderhistory["Closed"])
+				orderhistory = orderhistory.loc[orderhistory["OrderType"] == "LIMIT_BUY"]
+				orderhistory = orderhistory.sort_values("Closed", ascending=False)
+				orderhistory.reset_index(drop=True, inplace=True)
+				orderhistory.loc[:, "CumulativeQuant"] = orderhistory.Quantity.cumsum()
+				orderhistory = orderhistory.loc[orderhistory.CumulativeQuant <= volume]
+				price = sum(orderhistory.PricePerUnit * orderhistory.Quantity) / volume
+			else:
+				ticker = self.bt.get_ticker(market)
+				if ticker["success"]:
+					price = ticker["result"]["Last"]
 			return price
 
 	def min_return(self):

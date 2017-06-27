@@ -73,11 +73,13 @@ class Trading:
 		Monitores the last price, stop prices and looks for sell signals.
 		:return:
 		"""
-
+		counter = 0
 		while True:
 			self.update_prices()
 			self.open_orders = self.p.report()
-			print (self.open_orders)
+			counter +=1
+			if counter % 30 == 0 or counter == 1:
+				print(self.open_orders)
 			if not self.open_orders.empty:
 				if not self.open_orders.loc[(self.open_orders["LastPrice"] >= self.open_orders["MinReturn"])].empty:
 					self.update_stop()
