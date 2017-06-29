@@ -45,7 +45,7 @@ class Trading:
 
 
 	def close_order(self):
-		for i, r in self.open_orders.loc[self.open_orders["Stop"]<= self.open_orders["LastPrice"]].iterrows():
+		for i, r in self.open_orders.loc[self.open_orders["Stop"]>= self.open_orders["LastPrice"]].iterrows():
 			currency = r["Currency"]
 			market = "BTC-%s" % currency
 			quantity = r["Volume"]
@@ -57,7 +57,7 @@ class Trading:
 				if orders["success"] == "True":
 					orders = pd.DataFrame(orders["result"])
 					if orders.empty:
-						break
+						return
 					else:
 						uid = open_order["result"][0]["OrderUuid"]
 						self.bt.cancel(uuid=uid)
