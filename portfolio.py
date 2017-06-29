@@ -49,8 +49,19 @@ class Portfolio(object):
 				orderhistory = orderhistory.sort_values("Closed", ascending=False)
 				orderhistory.reset_index(drop=True, inplace=True)
 				orderhistory.loc[:, "CumulativeQuant"] = orderhistory.Quantity.cumsum()
-				orderhistory = orderhistory.loc[orderhistory.CumulativeQuant <= volume]
-				price = sum(orderhistory.PricePerUnit * orderhistory.Quantity) / volume
+				orderhistory = orderhistory.loc[orderhistory.CumulativeQuant >= volume]
+
+				quantity = volume
+				price = 0
+				while quantity>0:
+					for i,r in orderhistory.iterrows():
+						if r.Quantity < quantity:
+							price += r.Quantity * r.PricePerUnit
+							quantity -= r.Quantity
+						elif r.Quantity >= quantity:
+							price += quantity * r.PricePerUnit
+							quantity = 0
+				price = price / volume
 			else:
 				ticker = self.bt.get_ticker(market)
 				if ticker["success"]:
