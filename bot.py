@@ -91,7 +91,7 @@ class Trading:
 					#Needs to send me a SMS so I know whats up
 					print (time.time())
 					print ("SELLING:\n", self.open_orders.loc[self.open_orders["Stop"]>= self.open_orders["LastPrice"]]["Currency"])
-					#self.close_order()
+					self.close_order()
 					time.sleep(5)
 					self.open_orders = self.p.report()
 			time.sleep(30)
