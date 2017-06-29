@@ -57,8 +57,10 @@ class Trading:
 				if orders["success"] == "True":
 					orders = pd.DataFrame(orders["result"])
 					if orders.empty:
+						print ("Successfully Sold :", currency ,"at", rate)
 						return
 					else:
+						print ("Close Order and try again")
 						uid = open_order["result"][0]["OrderUuid"]
 						self.bt.cancel(uuid=uid)
 				rate = self.get_rate(market)
@@ -86,6 +88,9 @@ class Trading:
 				if not self.open_orders["Stop"].dropna().empty:
 					self.update_stop()
 				if not self.open_orders.loc[self.open_orders["Stop"]>= self.open_orders["LastPrice"]].empty:
+					#Needs to send me a SMS so I know whats up
+					print (time.time())
+					print ("SELLING:\n",% self.open_orders.loc[self.open_orders["Stop"]>= self.open_orders["LastPrice"]]["Currency"])
 					self.close_order()
 					time.sleep(5)
 					self.open_orders = self.p.report()
