@@ -4,7 +4,7 @@ import time
 
 class Trading:
 
-	TRAIL_PERCENT = 0.05
+	TRAIL_PERCENT = 0.08
 
 
 	def __init__(self, api_key, api_secret, minimum_return = 100):
@@ -77,8 +77,8 @@ class Trading:
 		"""
 		counter = 0
 		while True:
-			self.update_prices()
 			self.open_orders = self.p.report()
+			self.update_prices()
 			counter +=1
 			if counter % 30 == 0 or counter == 1:
 				print(self.open_orders)
@@ -102,5 +102,5 @@ if __name__ == "__main__":
 	import sys
 	api_key = sys.argv[1]
 	api_secret = sys.argv[2]
-	t = Trading(api_key, api_secret, minimum_return = 100)
+	t = Trading(api_key, api_secret, minimum_return = 50)
 	t.monitoring()

@@ -1,6 +1,7 @@
 import pandas as pd
 from BittrexWrapper import Bittrex
 import numpy as np
+import time
 
 class Portfolio(object):
 
@@ -15,6 +16,7 @@ class Portfolio(object):
 		pass
 
 	def report(self):
+		self.get_open_orders()
 		self.min_return()
 		return self.open_orders
 
@@ -27,6 +29,7 @@ class Portfolio(object):
 		if balances["success"]:
 			balances = pd.DataFrame(balances["result"])
 			balances = balances.loc[balances.Balance > 0]
+			balances = balances.loc[~balances["Currency"].isin(["BTC", "ETH", "NMR"])]
 			#OrderPrices
 			for i, r in balances.iterrows():
 				currency = r["Currency"]
@@ -34,7 +37,6 @@ class Portfolio(object):
 				price = self.buy_price(currency, volume)
 				order = pd.DataFrame([[currency, price, volume]], columns = ["Currency", "BuyPrice", "Volume"])
 				self.open_orders = pd.concat([self.open_orders, order])
-			self.open_orders = self.open_orders.loc[~self.open_orders["Currency"].isin(["BTC", "ETH", "NMR"])]
 		return
 
 	def buy_price(self, currency, volume):
@@ -49,28 +51,30 @@ class Portfolio(object):
 				orderhistory = orderhistory.sort_values("Closed", ascending=False)
 				orderhistory.reset_index(drop=True, inplace=True)
 				orderhistory.loc[:, "CumulativeQuant"] = orderhistory.Quantity.cumsum()
-				orderhistory = orderhistory.loc[orderhistory.CumulativeQuant >= volume]
+				#orderhistory = orderhistory.loc[orderhistory.CumulativeQuant >= volume]
 
 				quantity = volume
 				price = 0
-				while quantity>0:
-					for i,r in orderhistory.iterrows():
-						if r.Quantity < quantity:
-							price += r.Quantity * r.PricePerUnit
-							quantity -= r.Quantity
-						elif r.Quantity >= quantity:
-							price += quantity * r.PricePerUnit
-							quantity = 0
-				price = price / volume
+
+				for i,r in orderhistory.iterrows():
+					if r.Quantity < quantity:
+						price += r.Quantity * r.PricePerUnit
+						quantity -= r.Quantity
+						"""Someone explain Floats in python to me. """
+					elif abs(r.Quantity - quantity) < 1e-11 or r.Quantity > quantity:
+						price += quantity * r.PricePerUnit
+						quantity = 0.
+					if quantity < 1e-13:
+						return price / volume
 			else:
 				ticker = self.bt.get_ticker(market)
 				if ticker["success"]:
-					price = ticker["result"]["Last"]
-			return price
+					return ticker["result"]["Last"]
+			return np.nan
 
 	def min_return(self):
 		"""Defines the minimum return at what point the stop-limit will be activated.
 		By default 2x."""
 		if self.open_orders.empty:
 			self.get_open_orders()
-		self.open_orders.loc[:,"MinReturn"] = self.open_orders.BuyPrice + ((self.minimum_return/100) * self.open_orders.BuyPrice)
+		self.open_orders.loc[:,"MinReturn"] = self.open_orders.BuyPrice + ((self.minimum_return/100.) * self.open_orders.BuyPrice)

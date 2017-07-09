@@ -15,6 +15,7 @@ except ImportError:
     from urllib.parse import urlencode
     from urllib.parse import urljoin
 import requests
+import time
 
 BUY_ORDERBOOK = 'buy'
 SELL_ORDERBOOK = 'sell'
@@ -28,6 +29,8 @@ MARKET_SET = {'getopenorders', 'cancel', 'sellmarket', 'selllimit', 'buymarket',
 ACCOUNT_SET = {'getbalances', 'getbalance', 'getdepositaddress', 'withdraw', 'getorderhistory'}
 
 
+
+
 class Bittrex(object):
     """
     Used for requesting Bittrex with API key and API secret
@@ -35,6 +38,17 @@ class Bittrex(object):
     def __init__(self, api_key = None, api_secret = None ):
         self.api_key = str(api_key) if api_key else ''
         self.api_secret = str(api_secret) if api_secret else ''
+        self.lastrequest = time.time()
+
+
+    def timer(self):
+        if time.time() - self.lastrequest < 0.5:
+            time.sleep(0.5)
+            return
+        else:
+            return
+
+
 
     def api_query(self, method, options=None):
         """
@@ -46,6 +60,8 @@ class Bittrex(object):
         :return: JSON response from Bittrex
         :rtype : dict
         """
+        self.timer()
+        self.lastrequest = time.time()
         if not options:
             options = {}
         nonce = str(int(time.time() * 1000))
